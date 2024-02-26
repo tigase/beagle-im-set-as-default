@@ -22,20 +22,39 @@
 import Cocoa
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    
+    private static let APP_BUNDLE_ID = "org.tigase.messenger.BeagleIM";
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         // Insert code here to initialize your application
-        let alert = NSAlert();
-        alert.alertStyle = .informational;
-        alert.messageText = "Set BeagleIM as default"
-        alert.informativeText = "Do you wish to set BeagleIM as default app to open URI starting with xmpp: ?";
-        alert.addButton(withTitle: "Yes");
-        alert.addButton(withTitle: "No");
-        switch alert.runModal() {
-        case .alertFirstButtonReturn:
-            setAsDefault();
-        default:
-            break;
+        let currentBundleId = LSCopyDefaultHandlerForURLScheme("xmpp" as CFString)?.takeRetainedValue();
+        print(currentBundleId, currentBundleId as String?)
+        if AppDelegate.APP_BUNDLE_ID == (currentBundleId as String?) {
+            let alert = NSAlert();
+            alert.alertStyle = .informational;
+            alert.messageText = "Set BeagleIM as default"
+            alert.informativeText = "BeagleIM is currently set as default app to open URI starting with xmpp:. Do you wish to keep as a default app it?";
+            alert.addButton(withTitle: "Yes");
+            alert.addButton(withTitle: "No");
+            switch alert.runModal() {
+            case .alertSecondButtonReturn:
+                unsetAsDefault();
+            default:
+                break;
+            }
+        } else {
+            let alert = NSAlert();
+            alert.alertStyle = .informational;
+            alert.messageText = "Set BeagleIM as default"
+            alert.informativeText = "Do you wish to set BeagleIM as default app to open URI starting with xmpp: ?";
+            alert.addButton(withTitle: "Yes");
+            alert.addButton(withTitle: "No");
+            switch alert.runModal() {
+            case .alertFirstButtonReturn:
+                setAsDefault();
+            default:
+                break;
+            }
         }
         exit(0);
     }
@@ -45,7 +64,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     private func setAsDefault() {
-        let result = LSSetDefaultHandlerForURLScheme("xmpp" as CFString, "org.tigase.messenger.BeagleIM" as CFString);
+        let result = LSSetDefaultHandlerForURLScheme("xmpp" as CFString, AppDelegate.APP_BUNDLE_ID as CFString);
         switch result {
         case 0:
             let alert = NSAlert();
@@ -59,6 +78,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             alert.alertStyle = .informational;
             alert.messageText = "Set BeagleIM as default"
             alert.informativeText = "It was not possible to set BeagleIM as default app for xmpp: URI.\nError code: \(result)";
+            alert.addButton(withTitle: "OK");
+            alert.runModal();
+        }
+    }
+    
+    private func unsetAsDefault() {
+        
+        let result = LSSetDefaultHandlerForURLScheme("xmpp" as CFString, "None" as CFString);
+        switch result {
+        case 0:
+            let alert = NSAlert();
+            alert.alertStyle = .informational;
+            alert.messageText = "Set BeagleIM as default"
+            alert.informativeText = "BeagleIM will not open URIs starting with xmpp:";
+            alert.addButton(withTitle: "OK");
+            alert.runModal();
+        default:
+            let alert = NSAlert();
+            alert.alertStyle = .informational;
+            alert.messageText = "Set BeagleIM as default"
+            alert.informativeText = "It was not possible to unset BeagleIM as default app for xmpp: URI.\nError code: \(result)";
             alert.addButton(withTitle: "OK");
             alert.runModal();
         }
